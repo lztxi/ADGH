@@ -27,9 +27,6 @@ application:
       - name: 'anti-AD'
         path: 'https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-easylist.txt'
       
-      - name: 'hagezi手动维护'
-        path: 'https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/personal.txt'
-      
       - name: '秋风'
         path: 'https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule.txt'
       
@@ -59,9 +56,6 @@ application:
       
       - name: 'Cats-Team'
         path: 'https://raw.githubusercontent.com/Cats-Team/AdRules/main/dns.txt'
-
-      - name: 'blackmatrix7'
-        path: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/AdGuard/Advertising/Advertising.txt'
 
     #本地规则文件
     local:

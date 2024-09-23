@@ -8,6 +8,8 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.fordes.adfs.constant.Constants.*;
@@ -22,7 +24,7 @@ public final class HostsHandler extends Handler implements InitializingBean {
     @Override
     public Rule parse(String line) {
         Map.Entry<String, String> entry = Util.parseHosts(line);
-        if (entry == null) {
+        if (entry == null || Objects.equals(entry.getKey(), entry.getValue())) {
             return null;
         }
 
@@ -30,8 +32,8 @@ public final class HostsHandler extends Handler implements InitializingBean {
         rule.setSource(RuleSet.HOSTS);
         rule.setOrigin(line);
         rule.setTarget(entry.getValue());
-        rule.setDest(entry.getKey());
-        rule.setMode(Util.equalsAny(entry.getKey(), LOCAL_V4, LOCAL_V6) ? Rule.Mode.DENY : Rule.Mode.REWRITE);
+        rule.setMode(LOCAL_IP.contains(entry.getKey()) && !LOCAL_DOMAIN.contains(entry.getValue()) ? Rule.Mode.DENY : Rule.Mode.REWRITE);
+        rule.setDest(Rule.Mode.DENY == rule.getMode() ? UNKNOWN_IP : entry.getKey());
         rule.setScope(Rule.Scope.DOMAIN);
         rule.setType(Rule.Type.BASIC);
         return rule;
@@ -42,7 +44,7 @@ public final class HostsHandler extends Handler implements InitializingBean {
         if (Rule.Scope.DOMAIN == rule.getScope() &&
                 Rule.Type.BASIC == rule.getType() &&
                 Rule.Mode.ALLOW != rule.getMode()) {
-            return rule.getDest() + TAB + rule.getTarget();
+            return Optional.ofNullable(rule.getDest()).orElse(UNKNOWN_IP) + TAB + rule.getTarget();
         }
         return null;
     }

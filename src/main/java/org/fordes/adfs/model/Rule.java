@@ -3,6 +3,7 @@ package org.fordes.adfs.model;
 import lombok.Data;
 import org.fordes.adfs.enums.RuleSet;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -20,18 +21,28 @@ public class Rule {
     private Mode mode;
     private Scope scope;
     private Type type;
-    private Set<Control> controls = Set.of();
+    private Set<Control> controls = new HashSet<>(Control.values().length, 1.0f);
 
 
     /**
      * 规则控制参数
      */
     public enum Control {
-        // 最高优先级
+        /**
+         * 最高优先级
+         */
         IMPORTANT,
 
-        //覆盖子域名
+        /**
+         * 覆盖子域名
+         */
+
         OVERLAY,
+
+        /**
+         * 限定符，通常是 ^
+         */
+        QUALIFIER,
 
         ;
     }
@@ -107,12 +118,11 @@ public class Rule {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof  Rule rule) {
+        if (o instanceof Rule rule) {
             if (Type.UNKNOWN == this.type || Type.UNKNOWN == rule.getType()) {
                 return Objects.equals(this.origin, rule.origin);
             }
             return Objects.equals(this.target, rule.target) &&
-                    Objects.equals(this.dest, rule.dest) &&
                     this.mode == rule.mode &&
                     this.scope == rule.scope &&
                     this.type == rule.type;
@@ -125,7 +135,21 @@ public class Rule {
         if (Type.UNKNOWN == this.type) {
             return Objects.hash(this.origin);
         }
-        return Objects.hash(getTarget(), getDest(), getMode(), getScope(), getType());
+        return Objects.hash(getTarget(), getMode(), getScope(), getType());
     }
 
+    @Override
+    public String toString() {
+        if (Type.UNKNOWN == this.type) {
+            return "Rule{" +
+                    "origin='" + origin + '\'' +
+                    '}';
+        }
+        return "Rule{" +
+                "target='" + target + '\'' +
+                ", mode=" + mode +
+                ", scope=" + scope +
+                ", type=" + type +
+                '}';
+    }
 }

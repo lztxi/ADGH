@@ -82,11 +82,11 @@ public abstract class RuleHandler implements InitializingBean {
                         });
             }
         } catch (Exception e) {
-            log.error("[{}] parser failed  => {}", prop.name(), e.getMessage());
+            log.error("[{}] parser failed  => {}\n", prop.name(), e.getMessage(), e);
         }
 
 
-        log.info("[{}]  parser done => {}/{}/{}", prop.name(),
+        log.info("[{}]  parser done => invalid: {}, repeat: {}, effective: {}", prop.name(),
                 invalid.get(), repeat.get(), effective.get());
     }
 

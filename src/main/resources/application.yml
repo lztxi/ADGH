@@ -57,9 +57,6 @@ application:
       - name: 'i-dont-care-about-cookies'
         path: 'https://www.i-dont-care-about-cookies.eu/abp/'
       
-      - name: '5whys-min'
-        path: 'https://raw.githubusercontent.com/5whys-adblock/AdGuardHome-rules/main/rules/output_min.txt'
-      
       - name: 'Cats-Team'
         path: 'https://raw.githubusercontent.com/Cats-Team/AdRules/main/dns.txt'
 
@@ -77,7 +74,7 @@ application:
       Last Modified: ${date}
       Homepage: https://github.com/fordes123/ad-filters-subscriber/
       From: AdGuard anti-AD 秋风 大萌主 jerryn70 adblock cjx-annoyance 
-      From: 5whys Cats-Team i-dont-care-about-cookies
+      From: Cats-Team i-dont-care-about-cookies
 
     path: rule #输出规则文件的路径，支持绝对/相对路径
     #输出规则文件列表 （！注意缩进，且每个类型只能输出一个文件）

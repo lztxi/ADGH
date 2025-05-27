@@ -43,8 +43,8 @@ application:
       - name: '大萌主'
         path: 'https://raw.githubusercontent.com/damengzhu/banad/main/dnslist.txt'
       
-      - name: 'jerryn70-Xiaomi'
-        path: 'https://raw.githubusercontent.com/jerryn70/GoodbyeAds/master/Extension/GoodbyeAds-Xiaomi-Extension.txt'
+      #- name: 'jerryn70-Xiaomi'
+        #path: 'https://raw.githubusercontent.com/jerryn70/GoodbyeAds/master/Extension/GoodbyeAds-Xiaomi-Extension.txt'
       
       - name: 'abp'
         path: 'https://easylist-downloads.adblockplus.org/abp-filters-anti-cv.txt'

@@ -43,9 +43,6 @@ application:
       - name: '大萌主'
         path: 'https://raw.githubusercontent.com/damengzhu/banad/main/dnslist.txt'
       
-      #- name: 'jerryn70-Xiaomi'
-        #path: 'https://raw.githubusercontent.com/jerryn70/GoodbyeAds/master/Extension/GoodbyeAds-Xiaomi-Extension.txt'
-      
       - name: 'abp'
         path: 'https://easylist-downloads.adblockplus.org/abp-filters-anti-cv.txt'
        
@@ -61,8 +58,8 @@ application:
       - name: 'i-dont-care-about-cookies'
         path: 'https://www.i-dont-care-about-cookies.eu/abp/'
       
-      - name: 'Cats-Team'
-        path: 'https://raw.githubusercontent.com/Cats-Team/AdRules/main/dns.txt'
+      #- name: 'Cats-Team'
+        #path: 'https://raw.githubusercontent.com/Cats-Team/AdRules/main/dns.txt'
 
     #本地规则文件
     local:

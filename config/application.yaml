@@ -28,38 +28,30 @@ application:
   rule:
     #远程订阅规则 （！使用前请删除下方示例配置, 注意缩进）
     remote:
+      - name: 'AdGuard DNS filter针对性优化 DNS 层拦截，覆盖广告、跟踪器、恶意软件'
+        path: 'https://raw.githubusercontent.com/AdguardTeam/HostlistsRegistry/main/assets/filter_1.txt'
+
       - name: 'AdGuard 中文'
         path: 'https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_224_Chinese/filter.txt'
 
-      - name: 'AdGuard DNS filter'
-        path: 'https://raw.githubusercontent.com/AdguardTeam/HostlistsRegistry/main/assets/filter_1.txt'
-      
-      - name: 'anti-AD'
+      - name: 'anti-AD(中文区主要规则)'
         path: 'https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-easylist.txt'
       
-      - name: '秋风'
+      - name: '秋风(适配路由器)'
         path: 'https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule.txt'
       
-      - name: '大萌主'
-        path: 'https://raw.githubusercontent.com/damengzhu/banad/main/dnslist.txt'
+      - name: '大萌主（轻量去除色情悬浮广告）'
+        path: 'https://raw.githubusercontent.com/damengzhu/banad/main/jiekouAD.txt'
       
-      - name: 'abp'
-        path: 'https://easylist-downloads.adblockplus.org/abp-filters-anti-cv.txt'
-       
-      - name: 'easylistchina'
-        path: 'https://easylist-downloads.adblockplus.org/easylistchina.txt'
+      - name: 'easyprivacy（专注隐私保护，拦截跟踪器、数据分析域名）'
+        path: 'https://easylist.to/easylist/easyprivacy.txt'
       
-      - name: 'easyprivacy'
-        path: 'https://easylist-downloads.adblockplus.org/easyprivacy.txt'
-      
-      - name: 'cjx-annoyance'
+      - name: 'cjx-annoyance(拦截弹窗、跳转广告、自我推广域名)'
         path: 'https://raw.githubusercontent.com/cjx82630/cjxlist/master/cjx-annoyance.txt'
       
       - name: 'i-dont-care-about-cookies'
         path: 'https://www.i-dont-care-about-cookies.eu/abp/'
-      
-      #- name: 'Cats-Team'
-        #path: 'https://raw.githubusercontent.com/Cats-Team/AdRules/main/dns.txt'
+
 
     #本地规则文件
     local:

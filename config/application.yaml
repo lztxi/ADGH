@@ -9,7 +9,7 @@ application:
   input:
 
     - name: 'AdGuard DNS filter针对性优化 DNS 层拦截，覆盖广告、跟踪器、恶意软件'
-      path: 'https://raw.githubusercontent.com/AdguardTeam/HostlistsRegistry/main/assets/filter_1.txt'
+      path: 'https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_15_DnsFilter/filter.txt'
 
     - name: 'AdGuard 中文'
       path: 'https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_224_Chinese/filter.txt'

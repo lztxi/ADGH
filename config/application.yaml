@@ -84,7 +84,7 @@ application:
     # ！开启此功能可能导致处理时间大幅延长
     # ！仅支持特定规则，具体原因请查看项目主页说明
     domain-detect:
-      enable: true   # 是否启用
+      enable: false   # 是否启用
       timeout: 2000   # 查询超时（毫秒）
       concurrency: 10 # 并发查询数
       provider:       # 使用的 DNS 服务器，仅支持 IP，多个之间具备优先级; 为空则使用默认DNS

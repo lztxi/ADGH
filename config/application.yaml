@@ -1,7 +1,3 @@
-##########################################
-## !!! 示例配置，修改无效 !!!
-## !!! example config, modify invalid !!!
-##########################################
 application:
 
   # 规则源配置
@@ -31,8 +27,6 @@ application:
 
     - name: 'i-dont-care-about-cookies'
       path: 'https://www.i-dont-care-about-cookies.eu/abp/'
-
-
   #输出配置
   output:
     #文件头配置，将自动作为注释添加至每个规则文件开始
@@ -85,9 +79,12 @@ application:
     # ！开启此功能可能导致处理时间大幅延长
     # ！仅支持特定规则，具体原因请查看项目主页说明
     domain-detect:
-      enable: false   # 是否启用
+      enable: true   # 是否启用
       timeout: 2000   # 查询超时（毫秒）
       concurrency: 10 # 并发查询数
+      cache-ttl-min: 600            # 缓存最小TTL（秒）
+      cache-ttl-max: 86400          # 缓存最大TTL（秒）
+      cache-negative-ttl: 300       # 失败结果缓存TTL（秒）
       provider:       # 使用的 DNS 服务器，仅支持 IP，多个之间具备优先级; 为空则使用默认DNS
         - 223.5.5.5
 
@@ -99,4 +96,4 @@ application:
     # 通过文件收集程序认定无效的规则，用于排查问题
     tracking:
       enable: true
-      path: logs/lost.list
+      path: logs/tracking.list

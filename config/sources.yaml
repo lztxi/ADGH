@@ -1,41 +1,39 @@
+# ================= 规则变化阈值 =================
 threshold:
-max_increase: 0.15 # +15% 以上 fail CI
-max_decrease: 0.10 # -10% 以上 fail CI
+  max_increase: 0.15   # +15% 以上 fail CI
+  max_decrease: 0.10   # -10% 以上 fail CI
 
-
+# ================= 上游规则源 =================
 sources:
-- name: AdGuard DNS filter针对性优化 DNS 层拦截，覆盖广告、跟踪器、恶意软件
-url: https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_15_DnsFilter/filter.txt
-enabled: true
+  - name: AdGuard DNS Filter（DNS 层拦截广告 / 跟踪器 / 恶意软件）
+    url: https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_15_DnsFilter/filter.txt
+    enabled: true
 
-- name: AdGuard 中文
-url: https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_224_Chinese/filter.txt
-enabled: true
+  - name: AdGuard 中文
+    url: https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_224_Chinese/filter.txt
+    enabled: true
 
-- name: anti-AD(中文区主要规则)
-url: https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-easylist.txt
-enabled: true
+  - name: anti-AD（中文区主要规则）
+    url: https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-easylist.txt
+    enabled: true
 
-- name: 秋风(适配路由器)
-url: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule.txt
-enabled: true
+  - name: 秋风（适配路由器）
+    url: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule.txt
+    enabled: true
 
-- name: AdGuard DNS filter针对性优化 DNS 层拦截，覆盖广告、跟踪器、恶意软件
-url: https://raw.githubusercontent.com/AdguardTeam/FiltersRegistry/master/filters/filter_15_DnsFilter/filter.txt
-enabled: true
+  - name: 大萌主（轻量去除色情 / 悬浮广告）
+    url: https://raw.githubusercontent.com/damengzhu/banad/main/jiekouAD.txt
+    enabled: true
 
-- name: 大萌主（轻量去除色情悬浮广告）
-url: https://raw.githubusercontent.com/damengzhu/banad/main/jiekouAD.txt
-enabled: true
+  - name: EasyPrivacy（隐私保护 / 跟踪器）
+    url: https://easylist.to/easylist/easyprivacy.txt
+    enabled: true
 
-- name: easyprivacy（专注隐私保护，拦截跟踪器、数据分析域名）
-url: https://easylist.to/easylist/easyprivacy.txt
-enabled: true
+  - name: cjx-annoyance（弹窗 / 跳转 / 自我推广）
+    url: https://raw.githubusercontent.com/cjx82630/cjxlist/master/cjx-annoyance.txt
+    enabled: true
 
-- name: 'cjx-annoyance(拦截弹窗、跳转广告、自我推广域名)
-url: https://raw.githubusercontent.com/cjx82630/cjxlist/master/cjx-annoyance.txt
-enabled: true
+  - name: I-Don't-Care-About-Cookies
+    url: https://www.i-dont-care-about-cookies.eu/abp/
+    enabled: true
 
-- name: i-dont-care-about-cookies
-url: https://www.i-dont-care-about-cookies.eu/abp/
-enabled: true

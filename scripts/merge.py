@@ -11,7 +11,14 @@ from pathlib import Path
 
 # ================= Paths =================
 BASE = Path(__file__).resolve().parents[1]
-OUT = BASE / "output"
+
+out_dir = os.getenv("OUTPUT_DIR")
+if out_dir:
+    OUT = Path(out_dir).resolve()
+else:
+    OUT = BASE / "output"
+
+OUT.mkdir(parents=True, exist_ok=True)
 CFG = BASE / "config/sources.yaml"
 WL = BASE / "config/whitelist.txt"
 AGG_WL = BASE / "config/aggregate_whitelist.txt"

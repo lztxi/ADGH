@@ -13,10 +13,6 @@ on:
         description: "忽略规则变化阈值，强制通过"
         required: false
         default: "false"
-      log_level:
-        description: "日志级别（info / debug）"
-        required: false
-        default: "info"
 
 jobs:
   build:
@@ -25,13 +21,21 @@ jobs:
     env:
       DRY_RUN: ${{ github.event.inputs.dry_run }}
       FORCE_PASS: ${{ github.event.inputs.force }}
-      LOG_LEVEL: ${{ github.event.inputs.log_level }}
 
     steps:
-      - name: Checkout dev branch
+      # ① checkout main（脚本 / 配置来源）
+      - name: Checkout main (scripts & config)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+
+      # ② checkout dev（仅用于存放生成结果）
+      - name: Checkout dev (output branch)
         uses: actions/checkout@v4
         with:
           ref: dev
+          path: dev
           fetch-depth: 0
 
       - name: Set up Python
@@ -40,44 +44,36 @@ jobs:
           python-version: "3.x"
 
       - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install requests pyyaml
+        run: pip install requests pyyaml
 
-      - name: Show execution parameters
+      - name: Repo self-check
         run: |
-          echo "🧭 Execution Parameters" >> $GITHUB_STEP_SUMMARY
-          echo "- DRY_RUN=${DRY_RUN:-false}" >> $GITHUB_STEP_SUMMARY
-          echo "- FORCE_PASS=${FORCE_PASS:-false}" >> $GITHUB_STEP_SUMMARY
-          echo "- LOG_LEVEL=${LOG_LEVEL:-info}" >> $GITHUB_STEP_SUMMARY
+          test -f main/scripts/merge.py || (echo "merge.py not found in main" && exit 1)
+          test -d dev/output || mkdir -p dev/output
 
+      # ③ 执行 main 分支中的脚本，但输出写入 dev/output
       - name: Build rules
-        run: python scripts/merge.py
-
-      - name: Upload stats summary
-        if: always()
+        env:
+          OUTPUT_DIR: dev/output
         run: |
-          echo "📊 Build Statistics" >> $GITHUB_STEP_SUMMARY
-          if [ -f output/stats.json ]; then
-            cat output/stats.json >> $GITHUB_STEP_SUMMARY
-          else
-            echo "stats.json not found" >> $GITHUB_STEP_SUMMARY
-          fi
+          cd main
+          python scripts/merge.py
 
-      - name: Commit & Push (safe)
+      # ④ 同步生成结果到 dev 分支
+      - name: Sync output to dev branch
+        run: |
+          rsync -av --delete main/output/ dev/output/
+
+      - name: Commit & Push to dev
         if: env.DRY_RUN != 'true'
+        working-directory: dev
         continue-on-error: true
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-
-          if git diff --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-
+          git diff --quiet && exit 0
           git add output/
-          git commit -m "auto: update rules"
+          git commit -m "auto: update deduplicated rules"
           git push origin dev
 
   cleanup:
@@ -90,30 +86,17 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const now = new Date();
-            const cutoff = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-
+            const cutoff = Date.now() - 2 * 24 * 60 * 60 * 1000
             const runs = await github.paginate(
               github.rest.actions.listWorkflowRunsForRepo,
-              {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-              }
-            );
-
-            let deleted = 0;
-            for (const run of runs) {
-              if (new Date(run.created_at) < cutoff) {
+              { owner: context.repo.owner, repo: context.repo.repo }
+            )
+            for (const r of runs) {
+              if (new Date(r.created_at).getTime() < cutoff) {
                 await github.rest.actions.deleteWorkflowRun({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  run_id: run.id,
-                });
-                deleted++;
+                  run_id: r.id,
+                })
               }
             }
-
-            core.summary
-              .addHeading('🧹 Cleanup')
-              .addRaw(`Deleted ${deleted} workflow runs older than 2 days`)
-              .write();

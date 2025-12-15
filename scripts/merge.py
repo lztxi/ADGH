@@ -1,175 +1,151 @@
-# merge.py
-# Adgh Rules Engine - Stable CI Version
-# 功能：
-# - 多上游规则整合（hosts / adblock）
-# - 去重 + AdGuardHome 统一格式
-# - 二级域名聚合（支持白名单）
-# - 全局白名单
-# - 规则数量统计 + 阈值失败 CI
-# - 输出多格式（AdGuardHome / dnsmasq / Clash）
+#!/usr/bin/env python3
+# merge.py – stable & fixed version
 
 import re
 import json
-import yaml
 import sys
+import os
+import yaml
 import requests
 from pathlib import Path
 
-# ================= 基础路径 =================
+# ================= Paths =================
 BASE = Path(__file__).resolve().parents[1]
-CONFIG = BASE / "config/sources.yaml"
-WHITELIST = BASE / "config/whitelist.txt"
-AGG_WHITELIST = BASE / "config/aggregate_whitelist.txt"
 OUT = BASE / "output"
+CFG = BASE / "config/sources.yaml"
+WL = BASE / "config/whitelist.txt"
+AGG_WL = BASE / "config/aggregate_whitelist.txt"
 
-# ================= 正则与常量 =================
-DOMAIN_RE = re.compile(
-    r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$",
-    re.I
-)
+OUT.mkdir(exist_ok=True)
 
-KNOWN_2LD = {
-    "co.uk", "org.uk", "gov.uk",
-    "com.cn", "net.cn", "org.cn"
-}
-
-# ================= 工具函数 =================
-
-def is_valid(domain: str) -> bool:
-    return DOMAIN_RE.match(domain) is not None
+# ================= Regex & Const =================
+DOMAIN_RE = re.compile(r"^(?:[a-z0-9-]+\.)+[a-z]{2,}$", re.I)
+KNOWN_2LD = {"co.uk", "org.uk", "gov.uk", "com.cn", "net.cn", "org.cn"}
 
 
-def load_set(path: Path) -> set[str]:
+# ================= Utils =================
+def load_domains(path: Path) -> set[str]:
     if not path.exists():
         return set()
     return {
-        d.strip().lower()
-        for d in path.read_text(encoding="utf-8").splitlines()
-        if is_valid(d.strip())
+        line.strip().lower()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if DOMAIN_RE.match(line.strip())
     }
 
 
-AGG_WHITE = load_set(AGG_WHITELIST)
-GLOBAL_WHITE = load_set(WHITELIST)
+WHITE = load_domains(WL)
+AGG_WHITE = load_domains(AGG_WL)
 
 
-def aggregate_domain(domain: str) -> str | None:
-    """二级域名聚合（支持白名单）"""
+def etld1(domain: str) -> str:
     if domain in AGG_WHITE:
         return domain
-
-    parts = domain.split('.')
-    if len(parts) < 2:
-        return None
-
-    last_two = '.'.join(parts[-2:])
-    last_three = '.'.join(parts[-3:])
-
-    if last_two in KNOWN_2LD and len(parts) >= 3:
-        return last_three
-    return last_two
+    parts = domain.split(".")
+    if len(parts) >= 3 and ".".join(parts[-2:]) in KNOWN_2LD:
+        return ".".join(parts[-3:])
+    return ".".join(parts[-2:])
 
 
-def normalize_line(line: str):
-    """解析并标准化规则行"""
+def parse_line(line: str):
     line = line.strip()
     if not line or line.startswith(("#", "!", "[")):
         return None, False
 
-    whitelist = False
+    is_white = False
     if line.startswith("@@"):
-        whitelist = True
-        line = line[2:].strip()
+        is_white = True
+        line = line[2:]
 
-    # hosts 格式
+    # hosts format
     if line.startswith(("0.0.0.0", "127.0.0.1")):
         parts = line.split()
         if len(parts) < 2:
             return None, False
         domain = parts[1]
     else:
-        # adblock 格式
         domain = line.replace("||", "").replace("^", "").strip()
 
-    if not is_valid(domain):
+    if not DOMAIN_RE.match(domain):
         return None, False
 
-    return aggregate_domain(domain.lower()), whitelist
+    return etld1(domain.lower()), is_white
 
 
-# ================= 主流程 =================
+# ================= Main =================
+rules: set[str] = set()
 
-def main():
-    OUT.mkdir(exist_ok=True)
+cfg = yaml.safe_load(CFG.read_text(encoding="utf-8"))
 
-    cfg = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
-    threshold = cfg.get("threshold", {})
-    max_inc = threshold.get("max_increase", 0.2)
-    max_dec = threshold.get("max_decrease", 0.2)
+for src in cfg.get("sources", []):
+    if not src.get("enabled", True):
+        continue
 
-    rules: set[str] = set()
+    resp = requests.get(src["url"], timeout=30)
+    resp.raise_for_status()
 
-    for src in cfg.get("sources", []):
-        if not src.get("enabled", True):
+    for raw in resp.text.splitlines():
+        domain, is_white = parse_line(raw)
+        if not domain:
             continue
+        if domain in WHITE:
+            is_white = True
+        rules.add(f"@@||{domain}^" if is_white else f"||{domain}^")
 
-        name = src.get("name", "unknown")
-        url = src.get("url")
-        if not url:
-            continue
+# ================= Stats =================
+stats_file = OUT / "stats.json"
+old_total = 0
+if stats_file.exists():
+    old_total = json.loads(stats_file.read_text()).get("total", 0)
 
-        print(f"→ Fetching [{name}] {url}")
-        resp = requests.get(url, timeout=30)
-        resp.raise_for_status()
+new_total = len(rules)
+delta = new_total - old_total
+ratio = (delta / old_total) if old_total else 0
 
-        for line in resp.text.splitlines():
-            domain, is_white = normalize_line(line)
-            if not domain:
-                continue
+stats = {
+    "total": new_total,
+    "previous": old_total,
+    "delta": delta,
+    "ratio": round(ratio, 4),
+}
 
-            if domain in GLOBAL_WHITE:
-                is_white = True
+stats_file.write_text(json.dumps(stats, indent=2), encoding="utf-8")
 
-            rule = f"@@||{domain}^" if is_white else f"||{domain}^"
-            rules.add(rule)
+# ================= Threshold =================
+threshold = cfg.get("threshold", {})
+max_inc = threshold.get("max_increase", 0.2)
+max_dec = threshold.get("max_decrease", 0.2)
+force = os.getenv("FORCE_PASS", "false").lower() == "true"
 
-    # ================= 统计 =================
-    stats_file = OUT / "stats.json"
-    old_total = 0
-    if stats_file.exists():
-        old_total = json.loads(stats_file.read_text()).get("total", 0)
+if old_total and not force:
+    if ratio > max_inc or ratio < -max_dec:
+        print("❌ Rule change exceeds threshold")
+        sys.exit(1)
 
-    new_total = len(rules)
-    delta = new_total - old_total
-    ratio = (delta / old_total) if old_total else 0
+# ================= Output =================
+(OUT / "adguardhome.txt").write_text(
+    "\n".join(sorted(rules)) + "\n",
+    encoding="utf-8",
+)
 
-    stats = {
-        "total": new_total,
-        "previous": old_total,
-        "delta": delta,
-        "ratio": round(ratio, 4)
-    }
+(OUT / "dnsmasq.conf").write_text(
+    "\n".join(
+        f"address=/{r[2:-1]}/0.0.0.0"
+        for r in sorted(rules)
+        if r.startswith("||")
+    ) + "\n",
+    encoding="utf-8",
+)
 
-    stats_file.write_text(json.dumps(stats, indent=2), encoding="utf-8")
-
-    print(f"Rules: {new_total} (Δ {delta}, {ratio:+.2%})")
-
-    # ================= 阈值保护 =================
-    force_pass = str(os.getenv("FORCE_PASS", "false")).lower() == "true"
-
-    if old_total > 0 and not force_pass:
-        if ratio > max_inc or ratio < -max_dec:
-            print("❌ Rule change exceeds threshold, build failed")
-            sys.exit(1)
-
-    # ================= 输出 =================
-    (OUT / "adguardhome.txt").write_text(
-        "\n".join(sorted(rules)) + "\n",
-        encoding="utf-8"
+(OUT / "clash.yaml").write_text(
+    "payload:\n"
+    + "\n".join(
+        f"  - '{r[2:-1]}'"
+        for r in sorted(rules)
+        if r.startswith("||")
     )
+    + "\n",
+    encoding="utf-8",
+)
 
-    (OUT / "dnsmasq.conf").write_text(
-        "\n".join(
-            sorted(
-                f"address=/{r[2:-1]}/0.0.0.0"
-                for r in rules
+print("✔ Build success")

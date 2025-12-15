@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "仅执行构建与统计，不提交结果"
+        description: "仅构建，不提交 dev"
         required: false
         default: "false"
       force:
-        description: "忽略规则变化阈值，强制通过"
+        description: "忽略规则变化阈值"
         required: false
         default: "false"
 
@@ -23,14 +23,12 @@ jobs:
       FORCE_PASS: ${{ github.event.inputs.force }}
 
     steps:
-      # ① checkout main（脚本 / 配置来源）
       - name: Checkout main (scripts & config)
         uses: actions/checkout@v4
         with:
           ref: main
           path: main
 
-      # ② checkout dev（仅用于存放生成结果）
       - name: Checkout dev (output branch)
         uses: actions/checkout@v4
         with:
@@ -46,33 +44,25 @@ jobs:
       - name: Install dependencies
         run: pip install requests pyyaml
 
-      - name: Repo self-check
-        run: |
-          test -f main/scripts/merge.py || (echo "merge.py not found in main" && exit 1)
-          test -d dev/output || mkdir -p dev/output
+      - name: Ensure output dir
+        run: mkdir -p dev/output
 
-      # ③ 执行 main 分支中的脚本，但输出写入 dev/output
       - name: Build rules
         env:
-          OUTPUT_DIR: dev/output
+          OUTPUT_DIR: ${{ github.workspace }}/dev/output
         run: |
           cd main
           python scripts/merge.py
 
-      # ④ 同步生成结果到 dev 分支
-      - name: Sync output to dev branch
-        run: |
-          rsync -av --delete main/output/ dev/output/
-
       - name: Commit & Push to dev
         if: env.DRY_RUN != 'true'
         working-directory: dev
-        continue-on-error: true
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git diff --quiet && exit 0
+          git status
           git add output/
+          git diff --cached --quiet && exit 0
           git commit -m "auto: update deduplicated rules"
           git push origin dev
 

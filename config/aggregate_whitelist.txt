@@ -1,0 +1,6 @@
+google.com
+youtube.com
+apple.com
+icloud.com
+microsoft.com
+github.com

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# merge.py – stable & fixed version
+# merge.py – FINAL STABLE VERSION
 
 import re
 import json
@@ -18,19 +18,17 @@ if out_dir:
 else:
     OUT = BASE / "output"
 
-OUT.mkdir(parents=True, exist_ok=True)
 CFG = BASE / "config/sources.yaml"
 WL = BASE / "config/whitelist.txt"
 AGG_WL = BASE / "config/aggregate_whitelist.txt"
 
-OUT.mkdir(exist_ok=True)
+OUT.mkdir(parents=True, exist_ok=True)
 
-# ================= Regex & Const =================
+# ================= Regex =================
 DOMAIN_RE = re.compile(r"^(?:[a-z0-9-]+\.)+[a-z]{2,}$", re.I)
 KNOWN_2LD = {"co.uk", "org.uk", "gov.uk", "com.cn", "net.cn", "org.cn"}
 
 
-# ================= Utils =================
 def load_domains(path: Path) -> set[str]:
     if not path.exists():
         return set()
@@ -64,7 +62,6 @@ def parse_line(line: str):
         is_white = True
         line = line[2:]
 
-    # hosts format
     if line.startswith(("0.0.0.0", "127.0.0.1")):
         parts = line.split()
         if len(parts) < 2:
@@ -155,4 +152,4 @@ if old_total and not force:
     encoding="utf-8",
 )
 
-print("✔ Build success")
+print(f"✔ Build success, generated {len(rules)} rules")

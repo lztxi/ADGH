@@ -1,0 +1,40 @@
+name: Build Rules Engine
+
+
+on:
+schedule:
+- cron: "0 12 * * *"
+workflow_dispatch:
+
+
+jobs:
+build:
+runs-on: ubuntu-latest
+
+
+steps:
+- uses: actions/checkout@v4
+with:
+ref: dev
+
+
+- uses: actions/setup-python@v5
+with:
+python-version: "3.x"
+
+
+- name: Install dependencies
+run: pip install requests pyyaml
+
+
+- name: Build rules
+run: python scripts/merge.py
+
+
+- name: Commit & Push
+run: |
+git config user.name "github-actions"
+git config user.email "github-actions@github.com"
+git add output/
+git commit -m "auto: update rules" || exit 0
+git push origin dev

@@ -1,10 +1,23 @@
-name: Build Rules Engine
+name: 规则合并
 
 
 on:
 schedule:
-- cron: "0 12 * * *"
+- cron: "0 3 * * *"
 workflow_dispatch:
+inputs:
+dry_run:
+description: "仅执行构建与统计，不提交结果（true/false）"
+required: false
+default: "false"
+force:
+description: "忽略规则变化阈值，强制通过（true/false）"
+required: false
+default: "false"
+log_level:
+description: "日志级别（info/debug）"
+required: false
+default: "info"
 
 
 jobs:
@@ -13,12 +26,14 @@ runs-on: ubuntu-latest
 
 
 steps:
-- uses: actions/checkout@v4
+- name: Checkout dev branch
+uses: actions/checkout@v4
 with:
 ref: dev
 
 
-- uses: actions/setup-python@v5
+- name: Set up Python
+uses: actions/setup-python@v5
 with:
 python-version: "3.x"
 
@@ -27,11 +42,35 @@ python-version: "3.x"
 run: pip install requests pyyaml
 
 
+- name: Show execution parameters
+run: |
+echo "🧭 Execution Parameters" >> $GITHUB_STEP_SUMMARY
+echo "- Dry Run: ${{ github.event.inputs.dry_run || 'false' }}" >> $GITHUB_STEP_SUMMARY
+echo "- Force Pass: ${{ github.event.inputs.force || 'false' }}" >> $GITHUB_STEP_SUMMARY
+echo "- Log Level: ${{ github.event.inputs.log_level || 'info' }}" >> $GITHUB_STEP_SUMMARY
+
+
 - name: Build rules
+env:
+DRY_RUN: ${{ github.event.inputs.dry_run }}
+FORCE_PASS: ${{ github.event.inputs.force }}
+LOG_LEVEL: ${{ github.event.inputs.log_level }}
 run: python scripts/merge.py
 
 
+- name: Upload stats summary
+if: always()
+run: |
+echo "📊 Build Statistics" >> $GITHUB_STEP_SUMMARY
+if [ -f output/stats.json ]; then
+cat output/stats.json >> $GITHUB_STEP_SUMMARY
+else
+echo "stats.json not found" >> $GITHUB_STEP_SUMMARY
+fi
+
+
 - name: Commit & Push
+if: ${{ github.event.inputs.dry_run != 'true' }}
 run: |
 git config user.name "github-actions"
 git config user.email "github-actions@github.com"

@@ -1,71 +1,99 @@
 name: Build Rules Engine
-
-on:
-  schedule:
-    - cron: "0 3 * * *"
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: "仅执行构建与统计，不提交结果"
-        required: false
-        default: "false"
-      force:
-        description: "忽略规则变化阈值，强制通过"
-        required: false
-        default: "false"
-      log_level:
-        description: "日志级别（info / debug）"
-        required: false
-        default: "info"
-
 jobs:
-  build:
-    runs-on: ubuntu-latest
+build:
+runs-on: ubuntu-latest
 
-    env:
-      DRY_RUN: ${{ github.event.inputs.dry_run }}
-      FORCE_PASS: ${{ github.event.inputs.force }}
-      LOG_LEVEL: ${{ github.event.inputs.log_level }}
 
-    steps:
-      - name: Checkout dev branch
-        uses: actions/checkout@v4
-        with:
-          ref: dev
+env:
+DRY_RUN: ${{ github.event.inputs.dry_run }}
+FORCE_PASS: ${{ github.event.inputs.force }}
+LOG_LEVEL: ${{ github.event.inputs.log_level }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
 
-      - name: Install dependencies
-        run: pip install requests pyyaml
+steps:
+- name: Checkout dev branch
+uses: actions/checkout@v4
+with:
+ref: dev
+fetch-depth: 0
 
-      - name: Show execution parameters
-        run: |
-          echo "🧭 Execution Parameters" >> $GITHUB_STEP_SUMMARY
-          echo "- DRY_RUN=${DRY_RUN:-false}" >> $GITHUB_STEP_SUMMARY
-          echo "- FORCE_PASS=${FORCE_PASS:-false}" >> $GITHUB_STEP_SUMMARY
-          echo "- LOG_LEVEL=${LOG_LEVEL:-info}" >> $GITHUB_STEP_SUMMARY
 
-      - name: Build rules
-        run: python scripts/merge.py
+- name: Set up Python
+uses: actions/setup-python@v5
+with:
+python-version: "3.x"
 
-      - name: Upload stats summary
-        if: always()
-        run: |
-          echo "📊 Build Statistics" >> $GITHUB_STEP_SUMMARY
-          if [ -f output/stats.json ]; then
-            cat output/stats.json >> $GITHUB_STEP_SUMMARY
-          else
-            echo "stats.json not found" >> $GITHUB_STEP_SUMMARY
-          fi
 
-      - name: Commit & Push
-        if: env.DRY_RUN != 'true'
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add output/
-          git commit -m "auto: update rules" || exit 0
-          git push origin dev
+- name: Install dependencies
+run: pip install requests pyyaml
+
+
+- name: Show execution parameters
+run: |
+echo "🧭 Execution Parameters" >> $GITHUB_STEP_SUMMARY
+echo "- DRY_RUN=${DRY_RUN:-false}" >> $GITHUB_STEP_SUMMARY
+echo "- FORCE_PASS=${FORCE_PASS:-false}" >> $GITHUB_STEP_SUMMARY
+echo "- LOG_LEVEL=${LOG_LEVEL:-info}" >> $GITHUB_STEP_SUMMARY
+
+
+- name: Build rules
+run: python scripts/merge.py
+
+
+- name: Upload stats summary
+if: always()
+run: |
+echo "📊 Build Statistics" >> $GITHUB_STEP_SUMMARY
+if [ -f output/stats.json ]; then
+cat output/stats.json >> $GITHUB_STEP_SUMMARY
+else
+echo "stats.json not found" >> $GITHUB_STEP_SUMMARY
+fi
+
+
+- name: Commit & Push (safe)
+if: env.DRY_RUN != 'true'
+continue-on-error: true
+run: |
+git config user.name "github-actions"
+git config user.email "github-actions@github.com"
+if git diff --quiet; then
+echo "No changes to commit"
+exit 0
+fi
+git add output/
+git commit -m "auto: update rules"
+git push origin dev
+
+
+cleanup:
+needs: build
+runs-on: ubuntu-latest
+permissions:
+actions: write
+steps:
+- name: Delete workflow runs older than 2 days
+uses: actions/github-script@v7
+with:
+script: |
+const now = new Date();
+const cutoff = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+const runs = await github.paginate(
+github.rest.actions.listWorkflowRunsForRepo,
+{ owner: context.repo.owner, repo: context.repo.repo }
+);
+let deleted = 0;
+for (const run of runs) {
+if (new Date(run.created_at) < cutoff) {
+await github.rest.actions.deleteWorkflowRun({
+owner: context.repo.owner,
+repo: context.repo.repo,
+run_id: run.id,
+});
+deleted++;
+}
+}
+core.summary
+.addHeading('🧹 Cleanup')
+.addRaw(`Deleted ${deleted} workflow runs older than 2 days`)
+.write();

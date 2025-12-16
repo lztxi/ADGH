@@ -131,5 +131,5 @@ if old_total and not force:
 )
 
 print(
-    f\"✔ Build success | block={len(block_rules)} whitelist={len(white_rules)}\"
+    f"✔ Build success | block={len(block_rules)} whitelist={len(white_rules)}"
 )

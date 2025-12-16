@@ -1,8 +1,8 @@
-name: Build Rules Engine
+name: 订阅合并
 
 on:
   schedule:
-    - cron: "0 3 * * *"
+    - cron: "0 12 * * *"
   workflow_dispatch:
     inputs:
       dry_run:

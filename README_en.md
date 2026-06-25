@@ -35,6 +35,7 @@ conversion and integration.
 #### Supported Rule Formats 
 
 - [x] easylist
+- [x] dns (AdGuardHome)
 - [x] dnsmasq
 - [x] clash
 - [x] smartdns
@@ -59,7 +60,7 @@ application:
   input:
     - name: 'Subscription 1'               # Optional parameter: rule name, keep unique
       path: 'https://example.org/rule.txt' # Required parameter: rule url (http/https) or local file location (absolute/relative path)
-      type: easylist                       # Optional parameter: rule type: easylist (default), dnsmasq, clash, smartdns, hosts
+      type: easylist                       # Optional parameter: rule type: easylist (default), dns, dnsmasq, clash, smartdns, hosts
 
     - name: 'Subscription 2'
       path: 'rule/local.txt'
@@ -77,7 +78,7 @@ application:
 
     files:
       - name: easylist.txt     # Required parameter: file name
-        type: easylist         # Required parameter: file type: easylist, dnsmasq, clash, smartdns, hosts
+        type: easylist         # Required parameter: file type: easylist,dns, dnsmasq, clash, smartdns, hosts
         file_header:           # Optional parameter: file header configuration, will be automatically added as comments at the beginning of each rule file (takes precedence over output.file_header)
         desc: 'ADFS EasyList'  # Optional parameter: file description, can be used in file_header with ${}
         filter:
@@ -90,7 +91,7 @@ application:
 ```
 
 ---
-This program is written in `Java 21` and built using `Maven`. You can refer to the [example configuration](./config/application-example.yaml),
+This program is written in `Java 25` and built using `Maven`. You can refer to the [example configuration](./config/application-example.yaml),
 edit `config/application.yaml`, and quickly get started using any of the following methods:
 
 #### **Local Debugging**
